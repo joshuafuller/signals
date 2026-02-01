@@ -243,9 +243,9 @@ func TestAsyncSignal_SingleListenerIsAsync(t *testing.T) {
 func TestAsyncSignal_EmitSkipsWhenContextCanceled(t *testing.T) {
 	sig := signals.New[int]()
 
-	called := 0
+	var called int32
 	sig.AddListener(func(ctx context.Context, v int) {
-		called++
+		atomic.AddInt32(&called, 1)
 	})
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -253,7 +253,8 @@ func TestAsyncSignal_EmitSkipsWhenContextCanceled(t *testing.T) {
 
 	sig.Emit(ctx, 1)
 
-	if called != 0 {
+	time.Sleep(20 * time.Millisecond)
+	if atomic.LoadInt32(&called) != 0 {
 		t.Fatalf("Expected no listener calls when context is canceled, got %d", called)
 	}
 }
@@ -285,9 +286,9 @@ func TestAsyncSignal_EmitIsNonBlocking(t *testing.T) {
 func TestAsyncSignal_ContextTimeoutStopsListeners(t *testing.T) {
 	sig := signals.New[int]()
 
-	called := 0
+	var called int32
 	sig.AddListener(func(ctx context.Context, v int) {
-		called++
+		atomic.AddInt32(&called, 1)
 	})
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
@@ -296,7 +297,8 @@ func TestAsyncSignal_ContextTimeoutStopsListeners(t *testing.T) {
 
 	sig.Emit(ctx, 1)
 
-	if called != 0 {
+	time.Sleep(20 * time.Millisecond)
+	if atomic.LoadInt32(&called) != 0 {
 		t.Fatalf("Expected no listener calls when context is timed out, got %d", called)
 	}
 }

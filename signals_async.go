@@ -53,6 +53,16 @@ func (s *AsyncSignal[T]) IsEmpty() bool {
 	return s.baseSignal.IsEmpty()
 }
 
+// Emit invokes all current listeners asynchronously (fire-and-forget).
+//
+// Emit schedules each subscribed listener in its own goroutine and returns
+// immediately without waiting for listeners to complete. If ctx is non-nil
+// and already canceled when Emit is called, no listeners are invoked. While
+// scheduling, if ctx becomes done, Emit stops starting new goroutines but
+// does not affect listeners already started.
+//
+// Panics raised by listener callbacks are recovered so a failing listener
+// cannot crash the process or prevent other listeners from being scheduled.
 func (s *AsyncSignal[T]) Emit(ctx context.Context, payload T) {
 	s.ensureBase()
 	if ctx != nil && ctx.Err() != nil {
